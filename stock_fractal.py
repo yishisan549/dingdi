@@ -7,6 +7,8 @@ import os  # 用来读取环境变量
 from email.mime.text import MIMEText
 from email.header import Header
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timedelta
+
 
 warnings.filterwarnings("ignore")
 
@@ -173,9 +175,13 @@ if __name__ == "__main__":
             if bottom:
                 bottom_list.append((code, name, lines))
 
-    # 生成报告
+        # 生成报告
     report = "===== A股顶底分型自动筛选 =====\n"
-    report += f"筛选时间：{time.strftime('%Y-%m-%d %H:%M')}\n\n"
+    # UTC时间+8小时换算北京时间
+    utc_now = datetime.utcnow()
+    bj_now = utc_now + timedelta(hours=8)
+    report += f"筛选时间：{bj_now.strftime('%Y-%m-%d %H:%M')}\n\n"
+
 
     report += "===== 顶分型股票（前4根上升）=====\n"
     if top_list:
