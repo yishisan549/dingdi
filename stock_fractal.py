@@ -3,6 +3,7 @@ import pandas as pd
 import time
 import warnings
 import smtplib
+import os  # 用来读取环境变量
 from email.mime.text import MIMEText
 from email.header import Header
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -110,14 +111,15 @@ def check_one_stock(code, name):
     except Exception:
         return code, name, False, False, None
 
-# ====================== 邮件发送 ======================
+# ====================== 安全邮件发送（从环境变量读取） ======================
 def send_email(content):
-    # ---------- 你只需要修改这里 5 个信息 ----------
-    sender = "你的QQ邮箱@qq.com"       # 发件邮箱
-    password = "QQ邮箱授权码"          # QQ邮箱16位授权码
-    receiver = "收件邮箱"              # 你要收结果的邮箱
-    smtp_server = "smtp.qq.com"        # 固定
-    smtp_port = 465                   # 固定
+    # 从 GitHub Secrets 读取，代码里无任何明文！
+    sender = os.getenv("EMAIL_SENDER")
+    password = os.getenv("EMAIL_AUTH_CODE")
+    receiver = os.getenv("EMAIL_RECEIVER")
+
+    smtp_server = "smtp.qq.com"
+    smtp_port = 465
 
     subject = f"A股分型筛选结果 {time.strftime('%Y-%m-%d %H:%M')}"
     msg = MIMEText(content, "plain", "utf-8")
