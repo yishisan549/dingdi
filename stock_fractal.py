@@ -3,14 +3,16 @@ import pandas as pd
 import time
 import warnings
 import smtplib
-import os  # 用来读取环境变量
+import sys
+import os
 from email.mime.text import MIMEText
 from email.header import Header
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
-
+from email.utils import formataddr
 
 warnings.filterwarnings("ignore")
+sys.stdout.reconfigure(encoding='utf-8')
 
 # ====================== K线结构 ======================
 class KLine:
@@ -113,9 +115,10 @@ def check_one_stock(code, name):
     except Exception:
         return code, name, False, False, None
 
-# ====================== 安全邮件发送（从环境变量读取） ======================
+from email.utils import formataddr  # 顶部也要导入
+
+# ====================== 安全邮件发送（修复QQ邮箱550报错版） ======================
 def send_email(content):
-    # 从 GitHub Secrets 读取，代码里无任何明文！
     sender = os.getenv("EMAIL_SENDER")
     password = os.getenv("EMAIL_AUTH_CODE")
     receiver = os.getenv("EMAIL_RECEIVER")
@@ -125,9 +128,11 @@ def send_email(content):
 
     subject = f"A股分型筛选结果 {time.strftime('%Y-%m-%d %H:%M')}"
     msg = MIMEText(content, "plain", "utf-8")
+
+    # 关键修复：用 formataddr 自动遵守RFC标准，中文自动编码
+    msg["From"] = formataddr(("A股自动选股机器人", sender))
+    msg["To"] = formataddr(("收件人", receiver))
     msg["Subject"] = Header(subject, "utf-8")
-    msg["From"] = sender
-    msg["To"] = receiver
 
     try:
         with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
@@ -164,7 +169,7 @@ if __name__ == "__main__":
     top_list = []
     bottom_list = []
 
-    MAX_WORKERS = 8
+    MAX_WORKERS = 6
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = {executor.submit(check_one_stock, row["代码"], row["名称"]): row for _, row in target_stocks.iterrows()}
 
@@ -175,13 +180,11 @@ if __name__ == "__main__":
             if bottom:
                 bottom_list.append((code, name, lines))
 
-        # 生成报告
+    # ====================== 生成报告（修复版） ======================
     report = "===== A股顶底分型自动筛选 =====\n"
-    # UTC时间+8小时换算北京时间
     utc_now = datetime.utcnow()
     bj_now = utc_now + timedelta(hours=8)
     report += f"筛选时间：{bj_now.strftime('%Y-%m-%d %H:%M')}\n\n"
-
 
     report += "===== 顶分型股票（前4根上升）=====\n"
     if top_list:
