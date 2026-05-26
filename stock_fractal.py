@@ -115,8 +115,6 @@ def check_one_stock(code, name):
     except Exception:
         return code, name, False, False, None
 
-from email.utils import formataddr  # 顶部也要导入
-
 # ====================== 安全邮件发送（修复QQ邮箱550报错版） ======================
 def send_email(content):
     sender = os.getenv("EMAIL_SENDER")
