@@ -9,14 +9,20 @@ jobs:
   run-script:
     runs-on: ubuntu-latest
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # 消除Node警告
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
+      - name: 配置Git全局认证（解决403）
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          git config --global url."https://${GH_PAT}@github.com/".insteadOf "https://github.com/"
+
       - uses: actions/checkout@v4
 
       - name: 设置Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"  # 改用3.11更稳定
+          python-version: "3.11"
 
       - name: 安装依赖
         run: |
@@ -29,4 +35,3 @@ jobs:
           EMAIL_AUTH_CODE: ${{ secrets.EMAIL_AUTH_CODE }}
           EMAIL_RECEIVER: ${{ secrets.EMAIL_RECEIVER }}
         run: python stock_fractal.py
-
